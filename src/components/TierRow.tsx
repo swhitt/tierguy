@@ -15,10 +15,10 @@ export function TierRow({ tier, onItemClick, selectedItemId }: TierRowProps) {
   })
 
   return (
-    <div className="flex items-stretch rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="flex items-stretch rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md">
       {/* Tier label */}
       <div
-        className="w-20 sm:w-24 flex items-center justify-center font-bold text-white shrink-0"
+        className="w-20 sm:w-24 flex items-center justify-center font-bold text-white shrink-0 transition-transform duration-200"
         style={{ backgroundColor: tier.color }}
       >
         {tier.name}
@@ -28,7 +28,7 @@ export function TierRow({ tier, onItemClick, selectedItemId }: TierRowProps) {
         ref={setNodeRef}
         className={`
           flex-1 min-h-[80px] p-2 flex flex-wrap gap-2 content-start
-          transition-colors duration-150
+          transition-colors duration-200
           ${isOver ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800'}
         `}
       >

@@ -24,12 +24,19 @@ export function DraggableItem({
 
   const style = {
     transform: CSS.Translate.toString(transform),
+    transition: 'transform 200ms ease',
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 1000 : undefined,
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
+      className={`transition-all duration-200 ${isDragging ? 'scale-105' : ''}`}
+    >
       <Item item={item} size={size} isSelected={isSelected} onClick={onClick} />
     </div>
   )

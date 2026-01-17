@@ -173,7 +173,11 @@ export function TierListView() {
       </div>
 
       <DragOverlay>
-        {activeItem ? <Item item={activeItem} /> : null}
+        {activeItem ? (
+          <div className="rounded-lg overflow-hidden shadow-2xl ring-2 ring-blue-500 scale-110 opacity-90">
+            <Item item={activeItem} />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   )

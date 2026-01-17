@@ -141,7 +141,7 @@ export function UnrankedPool({
           border-t border-gray-200 dark:border-gray-700
           bg-gray-100 dark:bg-gray-900
           p-4
-          transition-colors
+          transition-colors duration-200
           ${showDragFeedback ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''}
         `}
         onDrop={handleFileDrop}
@@ -175,6 +175,7 @@ export function UnrankedPool({
             min-h-[100px]
             flex flex-wrap gap-2
             rounded-lg
+            transition-colors duration-200
             ${showDragFeedback ? 'ring-2 ring-blue-400 ring-dashed' : ''}
             ${isEmpty ? 'items-center justify-center' : ''}
           `}
