@@ -1,7 +1,9 @@
 import { useRef, useState, useCallback } from 'react'
+import { useDroppable } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
-import { Item } from './Item'
+import { DraggableItem } from './DraggableItem'
 import { CropModal } from './CropModal'
+import type { Item } from '../types'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const WARN_FILE_SIZE = 2 * 1024 * 1024 // 2MB
@@ -13,7 +15,7 @@ interface PendingImage {
 }
 
 interface UnrankedPoolProps {
-  onItemClick?: (item: import('../types').Item) => void
+  onItemClick?: (item: Item) => void
   selectedItemId?: string
 }
 
@@ -23,18 +25,22 @@ export function UnrankedPool({
 }: UnrankedPoolProps) {
   const { tierList, addItem } = useTierListStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
-  const [isDragOver, setIsDragOver] = useState(false)
+  const [isFileDragOver, setIsFileDragOver] = useState(false)
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
 
+  // dnd-kit droppable for item drag-drop
+  const { setNodeRef, isOver: isItemDragOver } = useDroppable({
+    id: 'unranked',
+    data: { tierId: null },
+  })
+
   const processFile = useCallback((file: File) => {
-    // Check file type
     if (!ACCEPTED_TYPES.includes(file.type)) {
       alert('Please select a PNG or JPG image.')
       return
     }
 
-    // Check file size
     if (file.size > MAX_FILE_SIZE) {
       alert('Image is too large (max 5MB). Please choose a smaller image.')
       return
@@ -65,10 +71,11 @@ export function UnrankedPool({
     e.target.value = ''
   }
 
-  const handleDrop = useCallback(
+  // Native file drop (not dnd-kit)
+  const handleFileDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
-      setIsDragOver(false)
+      setIsFileDragOver(false)
 
       const files = e.dataTransfer.files
       if (files.length > 0) {
@@ -78,14 +85,17 @@ export function UnrankedPool({
     [processFile]
   )
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
+  const handleFileDragOver = (e: React.DragEvent) => {
+    // Only show file drag feedback if dragging files (not dnd-kit items)
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault()
+      setIsFileDragOver(true)
+    }
   }
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleFileDragLeave = (e: React.DragEvent) => {
     e.preventDefault()
-    setIsDragOver(false)
+    setIsFileDragOver(false)
   }
 
   const handlePaste = useCallback(
@@ -122,6 +132,7 @@ export function UnrankedPool({
   if (!tierList) return null
 
   const isEmpty = tierList.unrankedItems.length === 0
+  const showDragFeedback = isFileDragOver || isItemDragOver
 
   return (
     <>
@@ -131,11 +142,11 @@ export function UnrankedPool({
           bg-gray-100 dark:bg-gray-900
           p-4
           transition-colors
-          ${isDragOver ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''}
+          ${showDragFeedback ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-400' : ''}
         `}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDrop={handleFileDrop}
+        onDragOver={handleFileDragOver}
+        onDragLeave={handleFileDragLeave}
         onPaste={handlePaste}
         tabIndex={0}
       >
@@ -159,23 +170,24 @@ export function UnrankedPool({
         </div>
 
         <div
+          ref={setNodeRef}
           className={`
             min-h-[100px]
             flex flex-wrap gap-2
             rounded-lg
-            ${isDragOver ? 'ring-2 ring-blue-400 ring-dashed' : ''}
+            ${showDragFeedback ? 'ring-2 ring-blue-400 ring-dashed' : ''}
             ${isEmpty ? 'items-center justify-center' : ''}
           `}
         >
           {isEmpty ? (
             <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
-              {isDragOver
-                ? 'Drop images here'
+              {showDragFeedback
+                ? 'Drop here'
                 : 'Drag images here, paste from clipboard, or click "Add Images"'}
             </p>
           ) : (
             tierList.unrankedItems.map((item) => (
-              <Item
+              <DraggableItem
                 key={item.id}
                 item={item}
                 isSelected={selectedItemId === item.id}

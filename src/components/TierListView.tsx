@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
 import { Item } from './Item'
+import { TierRow } from './TierRow'
 import { UnrankedPool } from './UnrankedPool'
 import { ItemEditModal } from './ItemEditModal'
 import type { Item as ItemType } from '../types'
@@ -12,10 +22,19 @@ interface EditingItem {
 }
 
 export function TierListView() {
-  const { tierList, createTierList, removeItem, updateItemLabel } =
+  const { tierList, createTierList, removeItem, updateItemLabel, moveItem } =
     useTierListStore()
   const setExportRef = useExportStore((s) => s.setExportRef)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
+  const [activeItem, setActiveItem] = useState<ItemType | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  )
 
   const tierRowsRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -43,6 +62,42 @@ export function TierListView() {
     }
   }, [editingItem, removeItem])
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event
+    setActiveItem(active.data.current?.item || null)
+  }, [])
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      setActiveItem(null)
+
+      if (!over) return
+
+      const itemId = active.id as string
+      const overId = over.id as string
+
+      // Determine target tier
+      let targetTierId: string | null = null
+      if (overId === 'unranked') {
+        targetTierId = null
+      } else if (overId.startsWith('tier-')) {
+        targetTierId = overId.replace('tier-', '')
+      } else {
+        return
+      }
+
+      // Move to end of target
+      const targetItems =
+        targetTierId === null
+          ? tierList?.unrankedItems || []
+          : tierList?.tiers.find((t) => t.id === targetTierId)?.items || []
+
+      moveItem(itemId, targetTierId, targetItems.length)
+    },
+    [tierList, moveItem]
+  )
+
   // Keyboard delete support
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -52,7 +107,6 @@ export function TierListView() {
         !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
       ) {
         if (editingItem.isInTier) {
-          // Modal handles confirmation for tier items
           return
         }
         removeItem(editingItem.item.id)
@@ -81,55 +135,43 @@ export function TierListView() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Tier rows area */}
-      <div ref={tierRowsRef} className="flex-1 p-4 space-y-2 overflow-auto">
-        {tierList.tiers.map((tier) => (
-          <div
-            key={tier.id}
-            className="flex items-stretch rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700"
-          >
-            {/* Tier label */}
-            <div
-              className="w-20 sm:w-24 flex items-center justify-center font-bold text-white shrink-0"
-              style={{ backgroundColor: tier.color }}
-            >
-              {tier.name}
-            </div>
-            {/* Tier items */}
-            <div className="flex-1 min-h-[80px] bg-gray-100 dark:bg-gray-800 p-2 flex flex-wrap gap-2">
-              {tier.items.length === 0 && (
-                <span className="text-gray-400 dark:text-gray-500 text-sm self-center">
-                  Drop items here
-                </span>
-              )}
-              {tier.items.map((item) => (
-                <Item
-                  key={item.id}
-                  item={item}
-                  isSelected={editingItem?.item.id === item.id}
-                  onClick={() => handleItemClick(item, true)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="flex flex-col h-full">
+        {/* Tier rows area */}
+        <div ref={tierRowsRef} className="flex-1 p-4 space-y-2 overflow-auto">
+          {tierList.tiers.map((tier) => (
+            <TierRow
+              key={tier.id}
+              tier={tier}
+              onItemClick={(item) => handleItemClick(item, true)}
+              selectedItemId={editingItem?.item.id}
+            />
+          ))}
+        </div>
+
+        <UnrankedPool
+          onItemClick={(item) => handleItemClick(item, false)}
+          selectedItemId={editingItem?.item.id}
+        />
+
+        {editingItem && (
+          <ItemEditModal
+            item={editingItem.item}
+            isInTier={editingItem.isInTier}
+            onSave={handleSave}
+            onDelete={handleDelete}
+            onClose={() => setEditingItem(null)}
+          />
+        )}
       </div>
 
-      <UnrankedPool
-        onItemClick={(item) => handleItemClick(item, false)}
-        selectedItemId={editingItem?.item.id}
-      />
-
-      {editingItem && (
-        <ItemEditModal
-          item={editingItem.item}
-          isInTier={editingItem.isInTier}
-          onSave={handleSave}
-          onDelete={handleDelete}
-          onClose={() => setEditingItem(null)}
-        />
-      )}
-    </div>
+      <DragOverlay>
+        {activeItem ? <Item item={activeItem} /> : null}
+      </DragOverlay>
+    </DndContext>
   )
 }
