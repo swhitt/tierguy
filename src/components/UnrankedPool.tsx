@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { DraggableItem } from './DraggableItem'
 import { CropModal } from './CropModal'
+import { GenerateImageModal } from './GenerateImageModal'
 import type { Item } from '../types'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -28,6 +29,7 @@ export function UnrankedPool({
   const [isFileDragOver, setIsFileDragOver] = useState(false)
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
+  const [showGenerateModal, setShowGenerateModal] = useState(false)
 
   // dnd-kit droppable for item drag-drop
   const { setNodeRef, isOver: isItemDragOver } = useDroppable({
@@ -129,6 +131,15 @@ export function UnrankedPool({
     setSizeWarning(null)
   }
 
+  const handleGenerateConfirm = (imageData: string, label: string) => {
+    addItem({
+      id: crypto.randomUUID(),
+      imageData,
+      label,
+    })
+    setShowGenerateModal(false)
+  }
+
   if (!tierList) return null
 
   const isEmpty = tierList.unrankedItems.length === 0
@@ -154,12 +165,33 @@ export function UnrankedPool({
           <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400">
             Unranked
           </h2>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            Add Images
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowGenerateModal(true)}
+              className="text-sm px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex items-center gap-1"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Generate
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              Add Images
+            </button>
+          </div>
           <input
             ref={fileInputRef}
             type="file"
@@ -212,6 +244,13 @@ export function UnrankedPool({
         <div className="fixed bottom-4 right-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded-lg shadow-lg z-50">
           {sizeWarning}
         </div>
+      )}
+
+      {showGenerateModal && (
+        <GenerateImageModal
+          onConfirm={handleGenerateConfirm}
+          onCancel={() => setShowGenerateModal(false)}
+        />
       )}
     </>
   )
