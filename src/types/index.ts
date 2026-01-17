@@ -48,3 +48,11 @@ export const DEFAULT_TIER_ORDER: TierLabel[] = [
   'E',
   'F',
 ]
+
+// Metadata for listing saved tier lists (without full data)
+export interface SavedTierListMeta {
+  id: string
+  name: string
+  updatedAt: number
+  createdAt: number
+}

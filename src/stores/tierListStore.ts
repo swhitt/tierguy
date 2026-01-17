@@ -1,10 +1,14 @@
 import { create } from 'zustand'
-import type { Item, Tier, TierList } from '../types'
+import type { Item, Tier, TierList, SavedTierListMeta } from '../types'
 import { DEFAULT_TIER_COLORS, DEFAULT_TIER_ORDER } from '../types'
 import {
   debouncedSave,
   loadFromStorage,
+  loadTierListById,
+  getSavedTierLists as getPersistentSavedTierLists,
+  deleteTierList as deletePersistentTierList,
   flushSave,
+  migrateFromLegacy,
   type SaveResult,
 } from '../utils/persistence'
 
@@ -13,6 +17,7 @@ type SaveError = 'quota' | 'serialization' | 'unknown' | null
 
 interface TierListState {
   tierList: TierList | null
+  savedTierLists: SavedTierListMeta[]
 
   // History for undo/redo
   past: Snapshot[]
@@ -26,6 +31,11 @@ interface TierListState {
   createTierList: (name: string) => void
   setTierList: (tierList: TierList | null) => void
   renameTierList: (name: string) => void
+
+  // Multi-list management
+  loadSavedTierList: (id: string) => void
+  deleteSavedTierList: (id: string) => void
+  refreshSavedTierLists: () => void
 
   // Tier actions
   addTier: (name: string, color: string) => void
@@ -86,6 +96,7 @@ const updateTimestamp = (tierList: TierList): TierList => ({
 
 export const useTierListStore = create<TierListState>((set, get) => ({
   tierList: null,
+  savedTierLists: [],
   past: [],
   future: [],
   saveError: null,
@@ -108,6 +119,30 @@ export const useTierListStore = create<TierListState>((set, get) => ({
   },
 
   setTierList: (tierList) => set({ tierList, past: [], future: [] }),
+
+  loadSavedTierList: (id) => {
+    const tierList = loadTierListById(id)
+    if (tierList) {
+      set({ tierList, past: [], future: [] })
+    }
+  },
+
+  deleteSavedTierList: (id) => {
+    const result = deletePersistentTierList(id)
+    if (result.success) {
+      const state = get()
+      set({
+        savedTierLists: getPersistentSavedTierLists(),
+        tierList: state.tierList?.id === id ? null : state.tierList,
+      })
+    } else if (result.error) {
+      set({ saveError: result.error })
+    }
+  },
+
+  refreshSavedTierLists: () => {
+    set({ savedTierLists: getPersistentSavedTierLists() })
+  },
 
   renameTierList: (name) =>
     set((state) => {
@@ -401,11 +436,18 @@ export const useTierListStore = create<TierListState>((set, get) => ({
 export function setupPersistence(): () => void {
   const store = useTierListStore
 
-  // Load saved state
+  // Migrate from old storage format if needed
+  migrateFromLegacy()
+
+  // Load saved tier lists and current tier list
   const saved = loadFromStorage()
-  if (saved) {
-    store.setState({ tierList: saved, past: [], future: [] })
-  }
+  const savedTierLists = getPersistentSavedTierLists()
+  store.setState({
+    tierList: saved,
+    savedTierLists,
+    past: [],
+    future: [],
+  })
   store.getState()._setHydrated()
 
   // Subscribe to tierList changes and auto-save
@@ -414,9 +456,12 @@ export function setupPersistence(): () => void {
       debouncedSave(state.tierList).then((result: SaveResult) => {
         if (!result.success && result.error) {
           store.getState()._setSaveError(result.error)
-        } else if (store.getState().saveError) {
-          // Clear error on successful save
-          store.getState().clearSaveError()
+        } else {
+          if (store.getState().saveError) {
+            store.getState().clearSaveError()
+          }
+          // Refresh saved tier lists after successful save
+          store.getState().refreshSavedTierLists()
         }
       })
     }
