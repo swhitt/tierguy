@@ -1,50 +1,373 @@
 import { create } from 'zustand'
-import type { Tier, TierItem, TierList } from '../types'
+import type { Item, Tier, TierList } from '../types'
+import { DEFAULT_TIER_COLORS } from '../types'
+
+type Snapshot = TierList | null
 
 interface TierListState {
   tierList: TierList | null
-  setTierList: (tierList: TierList) => void
-  addItem: (item: TierItem) => void
-  moveItem: (itemId: string, targetTierId: string | null, index: number) => void
-  updateTier: (tierId: string, updates: Partial<Tier>) => void
+
+  // History for undo/redo
+  past: Snapshot[]
+  future: Snapshot[]
+
+  // Tier list management
+  createTierList: (name: string) => void
+  setTierList: (tierList: TierList | null) => void
+  renameTierList: (name: string) => void
+
+  // Tier actions
+  addTier: (name: string, color: string) => void
+  removeTier: (tierId: string) => void
+  reorderTiers: (fromIndex: number, toIndex: number) => void
+  renameTier: (tierId: string, name: string) => void
+  setTierColor: (tierId: string, color: string) => void
+
+  // Item actions
+  addItem: (item: Omit<Item, 'order'>) => void
+  removeItem: (itemId: string) => void
+  moveItem: (
+    itemId: string,
+    targetTierId: string | null,
+    targetIndex: number
+  ) => void
+  updateItemLabel: (itemId: string, label: string) => void
+
+  // Undo/redo
+  undo: () => void
+  redo: () => void
+  canUndo: () => boolean
+  canRedo: () => boolean
+
+  // Reset
   reset: () => void
 }
 
-export const useTierListStore = create<TierListState>((set) => ({
-  tierList: null,
+const generateId = () => crypto.randomUUID()
 
-  setTierList: (tierList) => set({ tierList }),
+const createDefaultTiers = (): Tier[] =>
+  Object.entries(DEFAULT_TIER_COLORS).map(([name, color], index) => ({
+    id: generateId(),
+    name,
+    color,
+    items: [],
+    order: index,
+  }))
+
+const saveSnapshot = (
+  state: TierListState
+): Pick<TierListState, 'past' | 'future'> => ({
+  past: state.tierList
+    ? [...state.past.slice(-49), structuredClone(state.tierList)]
+    : state.past,
+  future: [],
+})
+
+const updateTimestamp = (tierList: TierList): TierList => ({
+  ...tierList,
+  updatedAt: Date.now(),
+})
+
+export const useTierListStore = create<TierListState>((set, get) => ({
+  tierList: null,
+  past: [],
+  future: [],
+
+  createTierList: (name) => {
+    const now = Date.now()
+    set({
+      tierList: {
+        id: generateId(),
+        name,
+        tiers: createDefaultTiers(),
+        unrankedItems: [],
+        createdAt: now,
+        updatedAt: now,
+      },
+      past: [],
+      future: [],
+    })
+  },
+
+  setTierList: (tierList) => set({ tierList, past: [], future: [] }),
+
+  renameTierList: (name) =>
+    set((state) => {
+      if (!state.tierList) return state
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({ ...state.tierList, name }),
+      }
+    }),
+
+  addTier: (name, color) =>
+    set((state) => {
+      if (!state.tierList) return state
+      const newTier: Tier = {
+        id: generateId(),
+        name,
+        color,
+        items: [],
+        order: state.tierList.tiers.length,
+      }
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: [...state.tierList.tiers, newTier],
+        }),
+      }
+    }),
+
+  removeTier: (tierId) =>
+    set((state) => {
+      if (!state.tierList) return state
+      const tier = state.tierList.tiers.find((t) => t.id === tierId)
+      if (!tier) return state
+
+      // Move items from removed tier to unranked
+      const itemsToMove = tier.items.map((item, idx) => ({
+        ...item,
+        order: state.tierList!.unrankedItems.length + idx,
+      }))
+
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: state.tierList.tiers
+            .filter((t) => t.id !== tierId)
+            .map((t, idx) => ({ ...t, order: idx })),
+          unrankedItems: [...state.tierList.unrankedItems, ...itemsToMove],
+        }),
+      }
+    }),
+
+  reorderTiers: (fromIndex, toIndex) =>
+    set((state) => {
+      if (!state.tierList) return state
+      const tiers = [...state.tierList.tiers]
+      const [moved] = tiers.splice(fromIndex, 1)
+      tiers.splice(toIndex, 0, moved)
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: tiers.map((t, idx) => ({ ...t, order: idx })),
+        }),
+      }
+    }),
+
+  renameTier: (tierId, name) =>
+    set((state) => {
+      if (!state.tierList) return state
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: state.tierList.tiers.map((t) =>
+            t.id === tierId ? { ...t, name } : t
+          ),
+        }),
+      }
+    }),
+
+  setTierColor: (tierId, color) =>
+    set((state) => {
+      if (!state.tierList) return state
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: state.tierList.tiers.map((t) =>
+            t.id === tierId ? { ...t, color } : t
+          ),
+        }),
+      }
+    }),
 
   addItem: (item) =>
     set((state) => {
       if (!state.tierList) return state
+      const newItem: Item = {
+        ...item,
+        order: state.tierList.unrankedItems.length,
+      }
       return {
-        tierList: {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
           ...state.tierList,
-          unrankedItems: [...state.tierList.unrankedItems, item],
-        },
+          unrankedItems: [...state.tierList.unrankedItems, newItem],
+        }),
       }
     }),
 
-  moveItem: (_itemId, _targetTierId, _index) =>
+  removeItem: (itemId) =>
     set((state) => {
       if (!state.tierList) return state
-      // Implementation will be expanded in data model task
-      return state
-    }),
 
-  updateTier: (tierId, updates) =>
-    set((state) => {
-      if (!state.tierList) return state
+      // Check unranked items
+      const inUnranked = state.tierList.unrankedItems.some(
+        (i) => i.id === itemId
+      )
+      if (inUnranked) {
+        return {
+          ...saveSnapshot(state),
+          tierList: updateTimestamp({
+            ...state.tierList,
+            unrankedItems: state.tierList.unrankedItems
+              .filter((i) => i.id !== itemId)
+              .map((i, idx) => ({ ...i, order: idx })),
+          }),
+        }
+      }
+
+      // Check tiers
       return {
-        tierList: {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
           ...state.tierList,
-          tiers: state.tierList.tiers.map((tier) =>
-            tier.id === tierId ? { ...tier, ...updates } : tier
-          ),
-        },
+          tiers: state.tierList.tiers.map((tier) => ({
+            ...tier,
+            items: tier.items
+              .filter((i) => i.id !== itemId)
+              .map((i, idx) => ({ ...i, order: idx })),
+          })),
+        }),
       }
     }),
 
-  reset: () => set({ tierList: null }),
+  moveItem: (itemId, targetTierId, targetIndex) =>
+    set((state) => {
+      if (!state.tierList) return state
+
+      // Find the item and its current location
+      let item: Item | undefined
+      let sourceTierId: string | null = null
+
+      // Check unranked
+      item = state.tierList.unrankedItems.find((i) => i.id === itemId)
+      if (!item) {
+        // Check tiers
+        for (const tier of state.tierList.tiers) {
+          item = tier.items.find((i) => i.id === itemId)
+          if (item) {
+            sourceTierId = tier.id
+            break
+          }
+        }
+      }
+
+      if (!item) return state
+
+      // Remove from source
+      let newUnranked = state.tierList.unrankedItems
+      let newTiers = state.tierList.tiers
+
+      if (sourceTierId === null) {
+        newUnranked = newUnranked.filter((i) => i.id !== itemId)
+      } else {
+        newTiers = newTiers.map((tier) =>
+          tier.id === sourceTierId
+            ? { ...tier, items: tier.items.filter((i) => i.id !== itemId) }
+            : tier
+        )
+      }
+
+      // Add to target
+      if (targetTierId === null) {
+        // Moving to unranked
+        newUnranked = [
+          ...newUnranked.slice(0, targetIndex),
+          { ...item, order: targetIndex },
+          ...newUnranked.slice(targetIndex),
+        ].map((i, idx) => ({ ...i, order: idx }))
+      } else {
+        // Moving to a tier
+        newTiers = newTiers.map((tier) => {
+          if (tier.id !== targetTierId) return tier
+          const items = [
+            ...tier.items.slice(0, targetIndex),
+            { ...item!, order: targetIndex },
+            ...tier.items.slice(targetIndex),
+          ].map((i, idx) => ({ ...i, order: idx }))
+          return { ...tier, items }
+        })
+      }
+
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          unrankedItems: newUnranked.map((i, idx) => ({ ...i, order: idx })),
+          tiers: newTiers,
+        }),
+      }
+    }),
+
+  updateItemLabel: (itemId, label) =>
+    set((state) => {
+      if (!state.tierList) return state
+
+      // Check unranked
+      const inUnranked = state.tierList.unrankedItems.some(
+        (i) => i.id === itemId
+      )
+      if (inUnranked) {
+        return {
+          ...saveSnapshot(state),
+          tierList: updateTimestamp({
+            ...state.tierList,
+            unrankedItems: state.tierList.unrankedItems.map((i) =>
+              i.id === itemId ? { ...i, label } : i
+            ),
+          }),
+        }
+      }
+
+      // Check tiers
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          tiers: state.tierList.tiers.map((tier) => ({
+            ...tier,
+            items: tier.items.map((i) =>
+              i.id === itemId ? { ...i, label } : i
+            ),
+          })),
+        }),
+      }
+    }),
+
+  undo: () =>
+    set((state) => {
+      if (state.past.length === 0) return state
+      const previous = state.past[state.past.length - 1]
+      return {
+        past: state.past.slice(0, -1),
+        future: state.tierList
+          ? [structuredClone(state.tierList), ...state.future]
+          : state.future,
+        tierList: previous,
+      }
+    }),
+
+  redo: () =>
+    set((state) => {
+      if (state.future.length === 0) return state
+      const next = state.future[0]
+      return {
+        past: state.tierList
+          ? [...state.past, structuredClone(state.tierList)]
+          : state.past,
+        future: state.future.slice(1),
+        tierList: next,
+      }
+    }),
+
+  canUndo: () => get().past.length > 0,
+  canRedo: () => get().future.length > 0,
+
+  reset: () => set({ tierList: null, past: [], future: [] }),
 }))
