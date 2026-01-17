@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Item as ItemType } from '../types'
@@ -10,24 +11,29 @@ interface DraggableItemProps {
   onClick?: () => void
 }
 
-export function DraggableItem({
+export const DraggableItem = memo(function DraggableItem({
   item,
   size = 'md',
   isSelected,
   onClick,
 }: DraggableItemProps) {
+  const draggableData = useMemo(() => ({ item }), [item])
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: item.id,
-      data: { item },
+      data: draggableData,
     })
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition: 'transform 200ms ease',
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 1000 : undefined,
-  }
+  const style = useMemo(
+    () => ({
+      transform: CSS.Translate.toString(transform),
+      transition: 'transform 200ms ease',
+      opacity: isDragging ? 0.5 : 1,
+      zIndex: isDragging ? 1000 : undefined,
+    }),
+    [transform, isDragging]
+  )
 
   return (
     <div
@@ -40,4 +46,4 @@ export function DraggableItem({
       <Item item={item} size={size} isSelected={isSelected} onClick={onClick} />
     </div>
   )
-}
+})

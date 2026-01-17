@@ -1,3 +1,4 @@
+import { memo, useCallback, useMemo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import type { Tier, Item } from '../types'
 import { DraggableItem } from './DraggableItem'
@@ -8,11 +9,24 @@ interface TierRowProps {
   selectedItemId?: string
 }
 
-export function TierRow({ tier, onItemClick, selectedItemId }: TierRowProps) {
+export const TierRow = memo(function TierRow({
+  tier,
+  onItemClick,
+  selectedItemId,
+}: TierRowProps) {
+  const droppableData = useMemo(() => ({ tierId: tier.id }), [tier.id])
+
   const { setNodeRef, isOver } = useDroppable({
     id: `tier-${tier.id}`,
-    data: { tierId: tier.id },
+    data: droppableData,
   })
+
+  const handleItemClick = useCallback(
+    (item: Item) => {
+      onItemClick?.(item)
+    },
+    [onItemClick]
+  )
 
   return (
     <div className="flex items-stretch rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md">
@@ -38,14 +52,33 @@ export function TierRow({ tier, onItemClick, selectedItemId }: TierRowProps) {
           </span>
         )}
         {tier.items.map((item) => (
-          <DraggableItem
+          <TierItem
             key={item.id}
             item={item}
             isSelected={selectedItemId === item.id}
-            onClick={() => onItemClick?.(item)}
+            onItemClick={handleItemClick}
           />
         ))}
       </div>
     </div>
   )
-}
+})
+
+// Inner component to avoid inline callback creation
+const TierItem = memo(function TierItem({
+  item,
+  isSelected,
+  onItemClick,
+}: {
+  item: Item
+  isSelected: boolean
+  onItemClick: (item: Item) => void
+}) {
+  const handleClick = useCallback(() => {
+    onItemClick(item)
+  }, [onItemClick, item])
+
+  return (
+    <DraggableItem item={item} isSelected={isSelected} onClick={handleClick} />
+  )
+})

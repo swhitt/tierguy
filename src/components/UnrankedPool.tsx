@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, memo, useMemo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { DraggableItem } from './DraggableItem'
@@ -20,7 +20,7 @@ interface UnrankedPoolProps {
   selectedItemId?: string
 }
 
-export function UnrankedPool({
+export const UnrankedPool = memo(function UnrankedPool({
   onItemClick,
   selectedItemId,
 }: UnrankedPoolProps) {
@@ -32,10 +32,18 @@ export function UnrankedPool({
   const [showGenerateModal, setShowGenerateModal] = useState(false)
 
   // dnd-kit droppable for item drag-drop
+  const droppableData = useMemo(() => ({ tierId: null }), [])
   const { setNodeRef, isOver: isItemDragOver } = useDroppable({
     id: 'unranked',
-    data: { tierId: null },
+    data: droppableData,
   })
+
+  const handleItemClick = useCallback(
+    (item: Item) => {
+      onItemClick?.(item)
+    },
+    [onItemClick]
+  )
 
   const processFile = useCallback((file: File) => {
     if (!ACCEPTED_TYPES.includes(file.type)) {
@@ -220,11 +228,11 @@ export function UnrankedPool({
             </p>
           ) : (
             tierList.unrankedItems.map((item) => (
-              <DraggableItem
+              <UnrankedItem
                 key={item.id}
                 item={item}
                 isSelected={selectedItemId === item.id}
-                onClick={() => onItemClick?.(item)}
+                onItemClick={handleItemClick}
               />
             ))
           )}
@@ -254,4 +262,23 @@ export function UnrankedPool({
       )}
     </>
   )
-}
+})
+
+// Inner component to avoid inline callback creation
+const UnrankedItem = memo(function UnrankedItem({
+  item,
+  isSelected,
+  onItemClick,
+}: {
+  item: Item
+  isSelected: boolean
+  onItemClick: (item: Item) => void
+}) {
+  const handleClick = useCallback(() => {
+    onItemClick(item)
+  }, [onItemClick, item])
+
+  return (
+    <DraggableItem item={item} isSelected={isSelected} onClick={handleClick} />
+  )
+})
