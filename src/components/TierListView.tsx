@@ -1,12 +1,21 @@
-import { useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
 import { Item } from './Item'
 import { UnrankedPool } from './UnrankedPool'
+import { ItemEditModal } from './ItemEditModal'
+import type { Item as ItemType } from '../types'
+
+interface EditingItem {
+  item: ItemType
+  isInTier: boolean
+}
 
 export function TierListView() {
-  const { tierList, createTierList } = useTierListStore()
+  const { tierList, createTierList, removeItem, updateItemLabel } =
+    useTierListStore()
   const setExportRef = useExportStore((s) => s.setExportRef)
+  const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
 
   const tierRowsRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -14,6 +23,46 @@ export function TierListView() {
     },
     [setExportRef]
   )
+
+  const handleItemClick = useCallback((item: ItemType, isInTier: boolean) => {
+    setEditingItem({ item, isInTier })
+  }, [])
+
+  const handleSave = useCallback(
+    (label: string) => {
+      if (editingItem) {
+        updateItemLabel(editingItem.item.id, label)
+      }
+    },
+    [editingItem, updateItemLabel]
+  )
+
+  const handleDelete = useCallback(() => {
+    if (editingItem) {
+      removeItem(editingItem.item.id)
+    }
+  }, [editingItem, removeItem])
+
+  // Keyboard delete support
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        editingItem &&
+        (e.key === 'Delete' || e.key === 'Backspace') &&
+        !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)
+      ) {
+        if (editingItem.isInTier) {
+          // Modal handles confirmation for tier items
+          return
+        }
+        removeItem(editingItem.item.id)
+        setEditingItem(null)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [editingItem, removeItem])
 
   if (!tierList) {
     return (
@@ -55,14 +104,32 @@ export function TierListView() {
                 </span>
               )}
               {tier.items.map((item) => (
-                <Item key={item.id} item={item} />
+                <Item
+                  key={item.id}
+                  item={item}
+                  isSelected={editingItem?.item.id === item.id}
+                  onClick={() => handleItemClick(item, true)}
+                />
               ))}
             </div>
           </div>
         ))}
       </div>
 
-      <UnrankedPool />
+      <UnrankedPool
+        onItemClick={(item) => handleItemClick(item, false)}
+        selectedItemId={editingItem?.item.id}
+      />
+
+      {editingItem && (
+        <ItemEditModal
+          item={editingItem.item}
+          isInTier={editingItem.isInTier}
+          onSave={handleSave}
+          onDelete={handleDelete}
+          onClose={() => setEditingItem(null)}
+        />
+      )}
     </div>
   )
 }

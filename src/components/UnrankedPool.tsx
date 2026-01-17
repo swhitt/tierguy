@@ -12,7 +12,15 @@ interface PendingImage {
   fileName: string
 }
 
-export function UnrankedPool() {
+interface UnrankedPoolProps {
+  onItemClick?: (item: import('../types').Item) => void
+  selectedItemId?: string
+}
+
+export function UnrankedPool({
+  onItemClick,
+  selectedItemId,
+}: UnrankedPoolProps) {
   const { tierList, addItem } = useTierListStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragOver, setIsDragOver] = useState(false)
@@ -167,7 +175,12 @@ export function UnrankedPool() {
             </p>
           ) : (
             tierList.unrankedItems.map((item) => (
-              <Item key={item.id} item={item} />
+              <Item
+                key={item.id}
+                item={item}
+                isSelected={selectedItemId === item.id}
+                onClick={() => onItemClick?.(item)}
+              />
             ))
           )}
         </div>
