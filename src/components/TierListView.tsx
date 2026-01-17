@@ -52,8 +52,12 @@ export function TierListView() {
     [setExportRef]
   )
 
-  const handleItemClick = useCallback((item: ItemType, isInTier: boolean) => {
-    setEditingItem({ item, isInTier })
+  const handleTierItemClick = useCallback((item: ItemType) => {
+    setEditingItem({ item, isInTier: true })
+  }, [])
+
+  const handleUnrankedItemClick = useCallback((item: ItemType) => {
+    setEditingItem({ item, isInTier: false })
   }, [])
 
   const handleSave = useCallback(
@@ -159,14 +163,14 @@ export function TierListView() {
             <TierRow
               key={tier.id}
               tier={tier}
-              onItemClick={(item) => handleItemClick(item, true)}
+              onItemClick={handleTierItemClick}
               selectedItemId={editingItem?.item.id}
             />
           ))}
         </div>
 
         <UnrankedPool
-          onItemClick={(item) => handleItemClick(item, false)}
+          onItemClick={handleUnrankedItemClick}
           selectedItemId={editingItem?.item.id}
         />
 

@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import type { Item as ItemType } from '../types'
 
 interface ItemProps {
@@ -14,7 +15,12 @@ const sizeClasses = {
   lg: 'w-20 h-20 sm:w-16 sm:h-16',
 }
 
-export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
+export const Item = memo(function Item({
+  item,
+  size = 'md',
+  isSelected,
+  onClick,
+}: ItemProps) {
   return (
     <div
       className={`
@@ -43,6 +49,8 @@ export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
         alt={item.label || 'Tier item'}
         className="w-full h-full object-cover"
         draggable={false}
+        loading="lazy"
+        decoding="async"
       />
       {item.label && (
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-black/0 px-1 py-1 pt-3">
@@ -53,4 +61,4 @@ export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
       )}
     </div>
   )
-}
+})
