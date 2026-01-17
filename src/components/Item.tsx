@@ -7,10 +7,11 @@ interface ItemProps {
   onClick?: () => void
 }
 
+// Touch-first sizing: larger on mobile (touch), can be smaller on desktop (mouse)
 const sizeClasses = {
-  sm: 'w-10 h-10 sm:w-12 sm:h-12',
-  md: 'w-12 h-12 sm:w-16 sm:h-16',
-  lg: 'w-16 h-16 sm:w-20 sm:h-20',
+  sm: 'w-12 h-12 sm:w-10 sm:h-10',
+  md: 'w-16 h-16 sm:w-14 sm:h-14',
+  lg: 'w-20 h-20 sm:w-16 sm:h-16',
 }
 
 export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
@@ -24,12 +25,12 @@ export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
         bg-gray-200 dark:bg-gray-700
         shadow-md
         ring-1 ring-black/10 dark:ring-white/10
-        cursor-grab
-        active:cursor-grabbing
+        cursor-pointer
         hover:shadow-lg
         hover:ring-2 hover:ring-blue-400/50 dark:hover:ring-blue-400/40
         hover:scale-105
         hover:z-10
+        active:scale-95
         transition-all
         duration-150
         select-none
