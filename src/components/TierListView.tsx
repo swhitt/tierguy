@@ -1,4 +1,5 @@
 import { useTierListStore } from '../stores/tierListStore'
+import { Item } from './Item'
 
 export function TierListView() {
   const { tierList, createTierList } = useTierListStore()
@@ -43,10 +44,7 @@ export function TierListView() {
                 </span>
               )}
               {tier.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded"
-                />
+                <Item key={item.id} item={item} />
               ))}
             </div>
           </div>
@@ -65,10 +63,7 @@ export function TierListView() {
             </span>
           )}
           {tierList.unrankedItems.map((item) => (
-            <div
-              key={item.id}
-              className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded"
-            />
+            <Item key={item.id} item={item} />
           ))}
         </div>
       </div>
