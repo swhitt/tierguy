@@ -7,6 +7,9 @@ interface CropModalProps {
   fileName: string
   onConfirm: (croppedImageData: string, label: string) => void
   onCancel: () => void
+  onSkip?: () => void
+  queuePosition?: number
+  queueTotal?: number
 }
 
 export function CropModal({
@@ -14,7 +17,11 @@ export function CropModal({
   fileName,
   onConfirm,
   onCancel,
+  onSkip,
+  queuePosition,
+  queueTotal,
 }: CropModalProps) {
+  const hasQueue = queuePosition !== undefined && queueTotal !== undefined
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
@@ -37,9 +44,16 @@ export function CropModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Crop Image
-          </h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Crop Image
+            </h2>
+            {hasQueue && (
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                {queuePosition} of {queueTotal}
+              </span>
+            )}
+          </div>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Drag to reposition, scroll or use slider to zoom
           </p>
@@ -78,13 +92,23 @@ export function CropModal({
               onClick={onCancel}
               className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              Cancel
+              {hasQueue ? 'Cancel All' : 'Cancel'}
             </button>
+            {onSkip && (
+              <button
+                onClick={onSkip}
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Skip
+              </button>
+            )}
             <button
               onClick={handleConfirm}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Confirm
+              {hasQueue && queuePosition! < queueTotal!
+                ? 'Confirm & Next'
+                : 'Confirm'}
             </button>
           </div>
         </div>
