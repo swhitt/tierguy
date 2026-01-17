@@ -1,8 +1,15 @@
 import { create } from 'zustand'
 import type { Item, Tier, TierList } from '../types'
 import { DEFAULT_TIER_COLORS } from '../types'
+import {
+  debouncedSave,
+  loadFromStorage,
+  flushSave,
+  type SaveResult,
+} from '../utils/persistence'
 
 type Snapshot = TierList | null
+type SaveError = 'quota' | 'serialization' | 'unknown' | null
 
 interface TierListState {
   tierList: TierList | null
@@ -10,6 +17,10 @@ interface TierListState {
   // History for undo/redo
   past: Snapshot[]
   future: Snapshot[]
+
+  // Persistence state
+  saveError: SaveError
+  isHydrated: boolean
 
   // Tier list management
   createTierList: (name: string) => void
@@ -38,6 +49,11 @@ interface TierListState {
   redo: () => void
   canUndo: () => boolean
   canRedo: () => boolean
+
+  // Persistence actions
+  clearSaveError: () => void
+  _setSaveError: (error: SaveError) => void
+  _setHydrated: () => void
 
   // Reset
   reset: () => void
@@ -72,6 +88,8 @@ export const useTierListStore = create<TierListState>((set, get) => ({
   tierList: null,
   past: [],
   future: [],
+  saveError: null,
+  isHydrated: false,
 
   createTierList: (name) => {
     const now = Date.now()
@@ -369,5 +387,50 @@ export const useTierListStore = create<TierListState>((set, get) => ({
   canUndo: () => get().past.length > 0,
   canRedo: () => get().future.length > 0,
 
-  reset: () => set({ tierList: null, past: [], future: [] }),
+  clearSaveError: () => set({ saveError: null }),
+  _setSaveError: (error) => set({ saveError: error }),
+  _setHydrated: () => set({ isHydrated: true }),
+
+  reset: () => set({ tierList: null, past: [], future: [], saveError: null }),
 }))
+
+/**
+ * Initialize persistence: load saved state and subscribe to changes.
+ * Call this once on app startup.
+ */
+export function setupPersistence(): () => void {
+  const store = useTierListStore
+
+  // Load saved state
+  const saved = loadFromStorage()
+  if (saved) {
+    store.setState({ tierList: saved, past: [], future: [] })
+  }
+  store.getState()._setHydrated()
+
+  // Subscribe to tierList changes and auto-save
+  const unsubscribe = store.subscribe((state, prevState) => {
+    if (state.tierList !== prevState.tierList) {
+      debouncedSave(state.tierList).then((result: SaveResult) => {
+        if (!result.success && result.error) {
+          store.getState()._setSaveError(result.error)
+        } else if (store.getState().saveError) {
+          // Clear error on successful save
+          store.getState().clearSaveError()
+        }
+      })
+    }
+  })
+
+  // Save immediately on page unload
+  const handleBeforeUnload = () => {
+    const { tierList } = store.getState()
+    flushSave(tierList)
+  }
+  window.addEventListener('beforeunload', handleBeforeUnload)
+
+  return () => {
+    unsubscribe()
+    window.removeEventListener('beforeunload', handleBeforeUnload)
+  }
+}
