@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
 import { Item } from './Item'
+import { UnrankedPool } from './UnrankedPool'
 
 export function TierListView() {
   const { tierList, createTierList } = useTierListStore()
@@ -61,22 +62,7 @@ export function TierListView() {
         ))}
       </div>
 
-      {/* Unranked pool */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-900 p-4">
-        <h2 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">
-          Unranked
-        </h2>
-        <div className="min-h-[100px] flex flex-wrap gap-2">
-          {tierList.unrankedItems.length === 0 && (
-            <span className="text-gray-400 dark:text-gray-500 text-sm">
-              Add images to start ranking
-            </span>
-          )}
-          {tierList.unrankedItems.map((item) => (
-            <Item key={item.id} item={item} />
-          ))}
-        </div>
-      </div>
+      <UnrankedPool />
     </div>
   )
 }
