@@ -6,7 +6,7 @@ export async function downloadAsPng(
   filename = 'tierlist.png'
 ): Promise<void> {
   const dataUrl = await toPng(element, {
-    backgroundColor: '#1f2937', // dark gray background
+    backgroundColor: '#111827', // darker, more professional background
     pixelRatio: 2, // higher quality
   })
 

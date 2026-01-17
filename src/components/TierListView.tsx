@@ -121,12 +121,12 @@ export function TierListView() {
   if (!tierList) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8">
-        <p className="text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-gray-500 dark:text-gray-400 mb-4 text-lg">
           No tier list loaded
         </p>
         <button
           onClick={() => createTierList('My Tier List')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 active:scale-95 transition-all shadow-md hover:shadow-lg"
         >
           Create New Tier List
         </button>
@@ -142,7 +142,10 @@ export function TierListView() {
     >
       <div className="flex flex-col h-full">
         {/* Tier rows area */}
-        <div ref={tierRowsRef} className="flex-1 p-4 space-y-2 overflow-auto">
+        <div
+          ref={tierRowsRef}
+          className="flex-1 p-4 space-y-1.5 overflow-auto bg-gray-100 dark:bg-gray-900"
+        >
           {tierList.tiers.map((tier) => (
             <TierRow
               key={tier.id}

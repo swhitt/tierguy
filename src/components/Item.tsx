@@ -19,12 +19,15 @@ export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
       className={`
         ${sizeClasses[size]}
         relative
-        rounded-lg
+        rounded-md
         overflow-hidden
         bg-gray-200 dark:bg-gray-700
-        shadow-sm
-        cursor-pointer
-        hover:shadow-md
+        shadow-md
+        ring-1 ring-black/10 dark:ring-white/10
+        cursor-grab
+        active:cursor-grabbing
+        hover:shadow-lg
+        hover:ring-2 hover:ring-blue-400/50 dark:hover:ring-blue-400/40
         hover:scale-105
         hover:z-10
         transition-all
@@ -41,8 +44,8 @@ export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {
         draggable={false}
       />
       {item.label && (
-        <div className="absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5">
-          <span className="text-white text-xs truncate block text-center">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-black/0 px-1 py-1 pt-3">
+          <span className="text-white text-xs font-medium truncate block text-center drop-shadow-sm">
             {item.label}
           </span>
         </div>

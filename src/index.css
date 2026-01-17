@@ -42,3 +42,56 @@ html {
   transition-duration: 150ms;
   transition-timing-function: ease-out;
 }
+
+/* Subtle background pattern for depth */
+.bg-subtle-pattern {
+  background-image:
+    radial-gradient(
+      circle at 25% 25%,
+      rgba(0, 0, 0, 0.02) 1px,
+      transparent 1px
+    ),
+    radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.dark .bg-subtle-pattern {
+  background-image:
+    radial-gradient(
+      circle at 25% 25%,
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 75% 75%,
+      rgba(255, 255, 255, 0.02) 1px,
+      transparent 1px
+    );
+}
+
+/* Scrollbar styling for a polished look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}

@@ -97,7 +97,7 @@ export function SaveMenu() {
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
       >
         {tierList ? (
           <>
@@ -146,7 +146,7 @@ export function SaveMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+        <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200/80 dark:border-gray-700/50 z-50 overflow-hidden">
           {isCreating ? (
             <div className="p-3">
               <input
@@ -165,13 +165,13 @@ export function SaveMenu() {
                 <button
                   onClick={handleCreate}
                   disabled={!newName.trim()}
-                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="flex-1 px-3 py-1.5 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
                   Create
                 </button>
                 <button
                   onClick={() => setIsCreating(false)}
-                  className="px-3 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                  className="px-3 py-1.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md active:scale-95 transition-all"
                 >
                   Cancel
                 </button>
@@ -181,7 +181,7 @@ export function SaveMenu() {
             <>
               <button
                 onClick={handleStartCreate}
-                className="w-full px-4 py-2.5 text-left text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700"
+                className="w-full px-4 py-2.5 text-left text-blue-600 dark:text-blue-400 font-medium hover:bg-gray-50 dark:hover:bg-gray-700/50 flex items-center gap-2 border-b border-gray-200 dark:border-gray-700/50 transition-colors"
               >
                 <svg
                   className="w-4 h-4"
