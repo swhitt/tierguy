@@ -168,10 +168,10 @@ export function UnrankedPool({
           <div className="flex gap-2">
             <button
               onClick={() => setShowGenerateModal(true)}
-              className="text-sm px-3 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors flex items-center gap-1"
+              className="text-sm px-4 py-2 sm:px-3 sm:py-1 bg-purple-600 text-white rounded-lg sm:rounded hover:bg-purple-700 active:scale-95 transition-all flex items-center gap-1.5 min-h-[44px] sm:min-h-0"
             >
               <svg
-                className="w-4 h-4"
+                className="w-5 h-5 sm:w-4 sm:h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -187,7 +187,7 @@ export function UnrankedPool({
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="text-sm px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              className="text-sm px-4 py-2 sm:px-3 sm:py-1 bg-blue-600 text-white rounded-lg sm:rounded hover:bg-blue-700 active:scale-95 transition-all min-h-[44px] sm:min-h-0"
             >
               Add Images
             </button>
@@ -204,8 +204,8 @@ export function UnrankedPool({
         <div
           ref={setNodeRef}
           className={`
-            min-h-[100px]
-            flex flex-wrap gap-2
+            min-h-[120px] sm:min-h-[100px]
+            flex flex-wrap gap-3 sm:gap-2
             rounded-lg
             transition-colors duration-200
             ${showDragFeedback ? 'ring-2 ring-blue-400 ring-dashed' : ''}

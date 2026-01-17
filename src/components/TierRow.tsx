@@ -27,7 +27,7 @@ export function TierRow({ tier, onItemClick, selectedItemId }: TierRowProps) {
       <div
         ref={setNodeRef}
         className={`
-          flex-1 min-h-[80px] p-2 flex flex-wrap gap-2 content-start
+          flex-1 min-h-[88px] sm:min-h-[72px] p-3 sm:p-2 flex flex-wrap gap-3 sm:gap-2 content-start
           transition-colors duration-200
           ${isOver ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800'}
         `}
