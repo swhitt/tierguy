@@ -8,9 +8,9 @@ interface ItemProps {
 }
 
 const sizeClasses = {
-  sm: 'w-12 h-12',
-  md: 'w-16 h-16',
-  lg: 'w-20 h-20',
+  sm: 'w-10 h-10 sm:w-12 sm:h-12',
+  md: 'w-12 h-12 sm:w-16 sm:h-16',
+  lg: 'w-16 h-16 sm:w-20 sm:h-20',
 }
 
 export function Item({ item, size = 'md', isSelected, onClick }: ItemProps) {

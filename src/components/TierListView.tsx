@@ -144,7 +144,7 @@ export function TierListView() {
         {/* Tier rows area */}
         <div
           ref={tierRowsRef}
-          className="flex-1 p-4 space-y-1.5 overflow-auto bg-gray-100 dark:bg-gray-900"
+          className="flex-1 p-2 sm:p-4 space-y-1.5 sm:space-y-2 overflow-auto bg-gray-100 dark:bg-gray-900"
         >
           {tierList.tiers.map((tier) => (
             <TierRow

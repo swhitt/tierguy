@@ -97,7 +97,7 @@ export function SaveMenu() {
     <div ref={menuRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all min-w-0"
       >
         {tierList ? (
           <>
@@ -113,11 +113,11 @@ export function SaveMenu() {
                   if (e.key === 'Escape') setIsEditing(false)
                 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-transparent border-b border-blue-500 outline-none text-gray-900 dark:text-white font-medium w-32"
+                className="bg-transparent border-b border-blue-500 outline-none text-gray-900 dark:text-white font-medium text-sm sm:text-base w-24 sm:w-32"
               />
             ) : (
               <span
-                className="text-gray-900 dark:text-white font-medium cursor-text"
+                className="text-gray-900 dark:text-white font-medium text-sm sm:text-base cursor-text truncate max-w-[100px] sm:max-w-[150px]"
                 onClick={(e) => {
                   e.stopPropagation()
                   handleStartEdit()
@@ -128,10 +128,12 @@ export function SaveMenu() {
             )}
           </>
         ) : (
-          <span className="text-gray-500 dark:text-gray-400">No list</span>
+          <span className="text-gray-500 dark:text-gray-400 text-sm sm:text-base">
+            No list
+          </span>
         )}
         <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3 h-3 sm:w-4 sm:h-4 text-gray-500 transition-transform shrink-0 ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -146,7 +148,7 @@ export function SaveMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200/80 dark:border-gray-700/50 z-50 overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-56 sm:w-64 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200/80 dark:border-gray-700/50 z-50 overflow-hidden">
           {isCreating ? (
             <div className="p-3">
               <input

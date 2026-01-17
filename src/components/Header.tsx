@@ -30,22 +30,22 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b border-gray-200/80 dark:border-gray-700/50 bg-white dark:bg-gray-900/95 backdrop-blur-sm">
-      <div className="flex items-center gap-4">
-        <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+    <header className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3 border-b border-gray-200/80 dark:border-gray-700/50 bg-white dark:bg-gray-900/95 backdrop-blur-sm">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent shrink-0">
           TierGuy
         </h1>
         <SaveMenu />
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <button
           onClick={handleJsonImport}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+          className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
           aria-label="Import JSON"
           title="Import JSON"
         >
           <svg
-            className="w-5 h-5 text-gray-600 dark:text-gray-400"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -61,12 +61,12 @@ export function Header() {
         <button
           onClick={handleJsonExport}
           disabled={!tierList}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Export JSON"
           title="Export JSON"
         >
           <svg
-            className="w-5 h-5 text-gray-600 dark:text-gray-400"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -82,12 +82,12 @@ export function Header() {
         <button
           onClick={handlePngExport}
           disabled={!exportRef}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Download as PNG"
           title="Download as PNG"
         >
           <svg
-            className="w-5 h-5 text-gray-600 dark:text-gray-400"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 dark:text-gray-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -102,13 +102,13 @@ export function Header() {
         </button>
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+          className="p-1.5 sm:p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
           aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
         >
           {theme === 'dark' ? (
             <svg
-              className="w-5 h-5 text-yellow-400"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
@@ -120,7 +120,7 @@ export function Header() {
             </svg>
           ) : (
             <svg
-              className="w-5 h-5 text-gray-600"
+              className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"
               fill="currentColor"
               viewBox="0 0 20 20"
             >
