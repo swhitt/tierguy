@@ -22,14 +22,29 @@ export interface TierList {
   updatedAt: number
 }
 
-// Default tier colors (S through F)
+// Gacha-style tier colors
 export const DEFAULT_TIER_COLORS = {
-  S: '#ff7f7f',
-  A: '#ffbf7f',
-  B: '#ffdf7f',
-  C: '#ffff7f',
-  D: '#bfff7f',
-  F: '#7fbfff',
+  SSS: '#ff69b4', // pink/magenta
+  SS: '#ffa500', // orange/gold
+  S: '#ef4444', // red
+  A: '#eab308', // yellow
+  B: '#06b6d4', // cyan/sky blue
+  C: '#14b8a6', // green/teal
+  D: '#a855f7', // purple
+  E: '#6b7280', // gray
+  F: '#374151', // dark gray/charcoal
 } as const
 
 export type TierLabel = keyof typeof DEFAULT_TIER_COLORS
+
+export const DEFAULT_TIER_ORDER: TierLabel[] = [
+  'SSS',
+  'SS',
+  'S',
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+]

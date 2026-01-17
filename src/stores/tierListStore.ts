@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Item, Tier, TierList } from '../types'
-import { DEFAULT_TIER_COLORS } from '../types'
+import { DEFAULT_TIER_COLORS, DEFAULT_TIER_ORDER } from '../types'
 import {
   debouncedSave,
   loadFromStorage,
@@ -62,10 +62,10 @@ interface TierListState {
 const generateId = () => crypto.randomUUID()
 
 const createDefaultTiers = (): Tier[] =>
-  Object.entries(DEFAULT_TIER_COLORS).map(([name, color], index) => ({
+  DEFAULT_TIER_ORDER.map((name, index) => ({
     id: generateId(),
     name,
-    color,
+    color: DEFAULT_TIER_COLORS[name],
     items: [],
     order: index,
   }))

@@ -1,1 +1,44 @@
-@import "tailwindcss";
+@import 'tailwindcss';
+
+@theme {
+  /* Dark mode selector */
+  --selector-dark: .dark;
+
+  /* Typography scale */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  /* Tier colors as CSS variables for easy access */
+  --color-tier-sss: #ff69b4;
+  --color-tier-ss: #ffa500;
+  --color-tier-s: #ef4444;
+  --color-tier-a: #eab308;
+  --color-tier-b: #06b6d4;
+  --color-tier-c: #14b8a6;
+  --color-tier-d: #a855f7;
+  --color-tier-e: #6b7280;
+  --color-tier-f: #374151;
+}
+
+/* Base styles */
+html {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+/* Smooth theme transitions */
+* {
+  transition-property: background-color, border-color;
+  transition-duration: 150ms;
+  transition-timing-function: ease-out;
+}
