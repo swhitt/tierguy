@@ -1,8 +1,18 @@
+import { useCallback } from 'react'
 import { useTierListStore } from '../stores/tierListStore'
+import { useExportStore } from '../stores/exportStore'
 import { Item } from './Item'
 
 export function TierListView() {
   const { tierList, createTierList } = useTierListStore()
+  const setExportRef = useExportStore((s) => s.setExportRef)
+
+  const tierRowsRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setExportRef(node)
+    },
+    [setExportRef]
+  )
 
   if (!tierList) {
     return (
@@ -23,7 +33,7 @@ export function TierListView() {
   return (
     <div className="flex flex-col h-full">
       {/* Tier rows area */}
-      <div className="flex-1 p-4 space-y-2 overflow-auto">
+      <div ref={tierRowsRef} className="flex-1 p-4 space-y-2 overflow-auto">
         {tierList.tiers.map((tier) => (
           <div
             key={tier.id}
