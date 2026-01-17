@@ -46,6 +46,7 @@ interface TierListState {
 
   // Item actions
   addItem: (item: Omit<Item, 'order'>) => void
+  addItems: (items: Omit<Item, 'order'>[]) => void
   removeItem: (itemId: string) => void
   moveItem: (
     itemId: string,
@@ -251,6 +252,23 @@ export const useTierListStore = create<TierListState>((set, get) => ({
         tierList: updateTimestamp({
           ...state.tierList,
           unrankedItems: [...state.tierList.unrankedItems, newItem],
+        }),
+      }
+    }),
+
+  addItems: (items) =>
+    set((state) => {
+      if (!state.tierList || items.length === 0) return state
+      const startOrder = state.tierList.unrankedItems.length
+      const newItems: Item[] = items.map((item, idx) => ({
+        ...item,
+        order: startOrder + idx,
+      }))
+      return {
+        ...saveSnapshot(state),
+        tierList: updateTimestamp({
+          ...state.tierList,
+          unrankedItems: [...state.tierList.unrankedItems, ...newItems],
         }),
       }
     }),

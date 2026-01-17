@@ -15,9 +15,47 @@ interface PendingImage {
   fileName: string
 }
 
+interface ImageQueueItem extends PendingImage {
+  id: string
+}
+
 interface UnrankedPoolProps {
   onItemClick?: (item: Item) => void
   selectedItemId?: string
+}
+
+// Recursively get files from a directory entry (for folder drag support)
+async function getFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
+  if (entry.isFile) {
+    return new Promise((resolve) => {
+      ;(entry as FileSystemFileEntry).file(
+        (file) => resolve([file]),
+        () => resolve([])
+      )
+    })
+  } else if (entry.isDirectory) {
+    const dirReader = (entry as FileSystemDirectoryEntry).createReader()
+    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
+      const allEntries: FileSystemEntry[] = []
+      const readEntries = () => {
+        dirReader.readEntries(
+          (results) => {
+            if (results.length === 0) {
+              resolve(allEntries)
+            } else {
+              allEntries.push(...results)
+              readEntries()
+            }
+          },
+          () => resolve(allEntries)
+        )
+      }
+      readEntries()
+    })
+    const files = await Promise.all(entries.map(getFilesFromEntry))
+    return files.flat()
+  }
+  return []
 }
 
 export const UnrankedPool = memo(function UnrankedPool({
@@ -27,9 +65,13 @@ export const UnrankedPool = memo(function UnrankedPool({
   const { tierList, addItem } = useTierListStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isFileDragOver, setIsFileDragOver] = useState(false)
-  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
+  const [imageQueue, setImageQueue] = useState<ImageQueueItem[]>([])
+  const [currentQueueIndex, setCurrentQueueIndex] = useState(0)
   const [sizeWarning, setSizeWarning] = useState<string | null>(null)
   const [showGenerateModal, setShowGenerateModal] = useState(false)
+
+  const currentImage = imageQueue[currentQueueIndex] || null
+  const queueLength = imageQueue.length
 
   // dnd-kit droppable for item drag-drop
   const droppableData = useMemo(() => ({ tierId: null }), [])
@@ -45,54 +87,118 @@ export const UnrankedPool = memo(function UnrankedPool({
     [onItemClick]
   )
 
-  const processFile = useCallback((file: File) => {
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      alert('Please select a PNG or JPG image.')
-      return
-    }
+  const processFile = useCallback(
+    (file: File): Promise<ImageQueueItem | null> => {
+      return new Promise((resolve) => {
+        if (!ACCEPTED_TYPES.includes(file.type)) {
+          resolve(null)
+          return
+        }
 
-    if (file.size > MAX_FILE_SIZE) {
-      alert('Image is too large (max 5MB). Please choose a smaller image.')
-      return
-    }
+        if (file.size > MAX_FILE_SIZE) {
+          resolve(null)
+          return
+        }
 
-    if (file.size > WARN_FILE_SIZE) {
-      setSizeWarning(
-        `Large image (${(file.size / 1024 / 1024).toFixed(1)}MB) - may affect performance.`
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const imageData = e.target?.result as string
+          if (imageData) {
+            resolve({
+              id: crypto.randomUUID(),
+              src: imageData,
+              fileName: file.name,
+            })
+          } else {
+            resolve(null)
+          }
+        }
+        reader.onerror = () => resolve(null)
+        reader.readAsDataURL(file)
+      })
+    },
+    []
+  )
+
+  const processFiles = useCallback(
+    async (files: File[]) => {
+      const validFiles = files.filter(
+        (f) => ACCEPTED_TYPES.includes(f.type) && f.size <= MAX_FILE_SIZE
       )
-    } else {
-      setSizeWarning(null)
-    }
 
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const imageData = e.target?.result as string
-      if (imageData) {
-        setPendingImage({ src: imageData, fileName: file.name })
+      if (validFiles.length === 0) {
+        alert(
+          'No valid images found. Please select PNG or JPG images under 5MB.'
+        )
+        return
       }
-    }
-    reader.readAsDataURL(file)
-  }, [])
+
+      const skipped = files.length - validFiles.length
+      if (skipped > 0) {
+        console.warn(`Skipped ${skipped} invalid files`)
+      }
+
+      // Check for large files
+      const largeFiles = validFiles.filter((f) => f.size > WARN_FILE_SIZE)
+      if (largeFiles.length > 0) {
+        setSizeWarning(
+          `${largeFiles.length} large image(s) may affect performance.`
+        )
+      } else {
+        setSizeWarning(null)
+      }
+
+      const queueItems = await Promise.all(validFiles.map(processFile))
+      const validItems = queueItems.filter(
+        (item): item is ImageQueueItem => item !== null
+      )
+
+      if (validItems.length > 0) {
+        setImageQueue(validItems)
+        setCurrentQueueIndex(0)
+      }
+    },
+    [processFile]
+  )
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
-    processFile(files[0])
+    processFiles(Array.from(files))
     e.target.value = ''
   }
 
-  // Native file drop (not dnd-kit)
+  // Native file drop (not dnd-kit) - supports folders via webkitGetAsEntry
   const handleFileDrop = useCallback(
-    (e: React.DragEvent) => {
+    async (e: React.DragEvent) => {
       e.preventDefault()
       setIsFileDragOver(false)
 
-      const files = e.dataTransfer.files
-      if (files.length > 0) {
-        processFile(files[0])
+      const items = e.dataTransfer.items
+      const allFiles: File[] = []
+
+      // Try to get entries for folder support
+      for (const item of items) {
+        const entry = item.webkitGetAsEntry?.()
+        if (entry) {
+          const files = await getFilesFromEntry(entry)
+          allFiles.push(...files)
+        } else if (item.kind === 'file') {
+          const file = item.getAsFile()
+          if (file) allFiles.push(file)
+        }
+      }
+
+      // Fallback to files if no items
+      if (allFiles.length === 0 && e.dataTransfer.files.length > 0) {
+        allFiles.push(...Array.from(e.dataTransfer.files))
+      }
+
+      if (allFiles.length > 0) {
+        processFiles(allFiles)
       }
     },
-    [processFile]
+    [processFiles]
   )
 
   const handleFileDragOver = (e: React.DragEvent) => {
@@ -111,17 +217,20 @@ export const UnrankedPool = memo(function UnrankedPool({
   const handlePaste = useCallback(
     (e: React.ClipboardEvent) => {
       const items = e.clipboardData.items
+      const files: File[] = []
       for (const item of items) {
         if (item.type.startsWith('image/')) {
           const file = item.getAsFile()
           if (file) {
-            processFile(file)
-            break
+            files.push(file)
           }
         }
       }
+      if (files.length > 0) {
+        processFiles(files)
+      }
     },
-    [processFile]
+    [processFiles]
   )
 
   const handleCropConfirm = (croppedImageData: string, label: string) => {
@@ -130,12 +239,31 @@ export const UnrankedPool = memo(function UnrankedPool({
       imageData: croppedImageData,
       label,
     })
-    setPendingImage(null)
-    setSizeWarning(null)
+    // Move to next image in queue or clear
+    if (currentQueueIndex < queueLength - 1) {
+      setCurrentQueueIndex((prev) => prev + 1)
+    } else {
+      setImageQueue([])
+      setCurrentQueueIndex(0)
+      setSizeWarning(null)
+    }
+  }
+
+  const handleCropSkip = () => {
+    // Skip to next image or clear queue
+    if (currentQueueIndex < queueLength - 1) {
+      setCurrentQueueIndex((prev) => prev + 1)
+    } else {
+      setImageQueue([])
+      setCurrentQueueIndex(0)
+      setSizeWarning(null)
+    }
   }
 
   const handleCropCancel = () => {
-    setPendingImage(null)
+    // Cancel entire queue
+    setImageQueue([])
+    setCurrentQueueIndex(0)
     setSizeWarning(null)
   }
 
@@ -204,6 +332,7 @@ export const UnrankedPool = memo(function UnrankedPool({
             ref={fileInputRef}
             type="file"
             accept="image/png,image/jpeg"
+            multiple
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -239,16 +368,20 @@ export const UnrankedPool = memo(function UnrankedPool({
         </div>
       </div>
 
-      {pendingImage && (
+      {currentImage && (
         <CropModal
-          imageSrc={pendingImage.src}
-          fileName={pendingImage.fileName}
+          key={currentImage.id}
+          imageSrc={currentImage.src}
+          fileName={currentImage.fileName}
           onConfirm={handleCropConfirm}
           onCancel={handleCropCancel}
+          onSkip={queueLength > 1 ? handleCropSkip : undefined}
+          queuePosition={queueLength > 1 ? currentQueueIndex + 1 : undefined}
+          queueTotal={queueLength > 1 ? queueLength : undefined}
         />
       )}
 
-      {sizeWarning && pendingImage && (
+      {sizeWarning && currentImage && (
         <div className="fixed bottom-4 right-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-4 py-2 rounded-lg shadow-lg z-50">
           {sizeWarning}
         </div>
