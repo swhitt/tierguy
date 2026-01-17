@@ -94,7 +94,12 @@ export function loadFromStorage(): TierList | null {
   if (!data.currentId) return null
 
   const tierList = data.lists[data.currentId]
-  if (!tierList || !tierList.id || !tierList.name || !Array.isArray(tierList.tiers)) {
+  if (
+    !tierList ||
+    !tierList.id ||
+    !tierList.name ||
+    !Array.isArray(tierList.tiers)
+  ) {
     return null
   }
   return tierList
@@ -106,7 +111,12 @@ export function loadFromStorage(): TierList | null {
 export function loadTierListById(id: string): TierList | null {
   const data = getStorageData()
   const tierList = data.lists[id]
-  if (!tierList || !tierList.id || !tierList.name || !Array.isArray(tierList.tiers)) {
+  if (
+    !tierList ||
+    !tierList.id ||
+    !tierList.name ||
+    !Array.isArray(tierList.tiers)
+  ) {
     return null
   }
   return tierList
