@@ -187,7 +187,7 @@ export function TierListView() {
 
       <DragOverlay>
         {activeItem ? (
-          <div className="rounded-lg overflow-hidden shadow-2xl ring-2 ring-blue-500 scale-110 opacity-90">
+          <div className="rounded-md overflow-hidden shadow-2xl ring-2 ring-blue-500 scale-110 opacity-90">
             <Item item={activeItem} />
           </div>
         ) : null}

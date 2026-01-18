@@ -46,7 +46,7 @@ export const DraggableItem = memo(function DraggableItem({
         {...listeners}
         {...attributes}
         className="
-          absolute -top-1 -left-1 z-10
+          absolute top-0.5 left-0.5 z-10
           w-7 h-7 sm:w-6 sm:h-6
           flex items-center justify-center
           bg-gray-800/80 dark:bg-gray-200/80
