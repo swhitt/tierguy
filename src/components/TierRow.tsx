@@ -12,7 +12,6 @@ interface TierRowProps {
   onItemClick?: (item: Item) => void
   selectedItemId?: string
   isOverContainer?: boolean
-  activeItemId?: string | null
 }
 
 export const TierRow = memo(function TierRow({
@@ -20,7 +19,6 @@ export const TierRow = memo(function TierRow({
   onItemClick,
   selectedItemId,
   isOverContainer,
-  activeItemId,
 }: TierRowProps) {
   const containerId = `tier-${tier.id}`
   const droppableData = useMemo(() => ({ tierId: tier.id }), [tier.id])
@@ -61,7 +59,10 @@ export const TierRow = memo(function TierRow({
           ${showContainerHighlight ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-100 dark:bg-gray-800'}
         `}
       >
-        <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>
+        <SortableContext
+          items={itemIds}
+          strategy={horizontalListSortingStrategy}
+        >
           {tier.items.length === 0 && !showContainerHighlight && (
             <span className="text-gray-400 dark:text-gray-500 text-sm self-center">
               Drop items here
@@ -74,7 +75,6 @@ export const TierRow = memo(function TierRow({
               containerId={containerId}
               isSelected={selectedItemId === item.id}
               onItemClick={handleItemClick}
-              isBeingDragged={activeItemId === item.id}
             />
           ))}
         </SortableContext>
@@ -89,13 +89,11 @@ const TierItem = memo(function TierItem({
   containerId,
   isSelected,
   onItemClick,
-  isBeingDragged,
 }: {
   item: Item
   containerId: string
   isSelected: boolean
   onItemClick: (item: Item) => void
-  isBeingDragged?: boolean
 }) {
   const handleClick = useCallback(() => {
     onItemClick(item)

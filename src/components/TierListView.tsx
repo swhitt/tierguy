@@ -10,7 +10,6 @@ import {
   closestCenter,
   type DragEndEvent,
   type DragStartEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
