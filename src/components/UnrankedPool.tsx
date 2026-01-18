@@ -1,7 +1,11 @@
 import { useRef, useState, useCallback, memo, useMemo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { useTierListStore } from '../stores/tierListStore'
-import { DraggableItem } from './DraggableItem'
+import { SortableItem } from './SortableItem'
 import { CropModal } from './CropModal'
 import { GenerateImageModal } from './GenerateImageModal'
 import type { Item } from '../types'
@@ -349,22 +353,27 @@ export const UnrankedPool = memo(function UnrankedPool({
             ${isEmpty ? 'items-center justify-center' : ''}
           `}
         >
-          {isEmpty ? (
-            <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
-              {showDragFeedback
-                ? 'Drop here'
-                : 'Drag images here, paste from clipboard, or click "Add Images"'}
-            </p>
-          ) : (
-            tierList.unrankedItems.map((item) => (
-              <UnrankedItem
-                key={item.id}
-                item={item}
-                isSelected={selectedItemId === item.id}
-                onItemClick={handleItemClick}
-              />
-            ))
-          )}
+          <SortableContext
+            items={tierList.unrankedItems.map((item) => item.id)}
+            strategy={horizontalListSortingStrategy}
+          >
+            {isEmpty ? (
+              <p className="text-gray-400 dark:text-gray-500 text-sm text-center">
+                {showDragFeedback
+                  ? 'Drop here'
+                  : 'Drag images here, paste from clipboard, or click "Add Images"'}
+              </p>
+            ) : (
+              tierList.unrankedItems.map((item) => (
+                <UnrankedItem
+                  key={item.id}
+                  item={item}
+                  isSelected={selectedItemId === item.id}
+                  onItemClick={handleItemClick}
+                />
+              ))
+            )}
+          </SortableContext>
         </div>
       </div>
 
@@ -412,6 +421,11 @@ const UnrankedItem = memo(function UnrankedItem({
   }, [onItemClick, item])
 
   return (
-    <DraggableItem item={item} isSelected={isSelected} onClick={handleClick} />
+    <SortableItem
+      item={item}
+      containerId="unranked"
+      isSelected={isSelected}
+      onClick={handleClick}
+    />
   )
 })

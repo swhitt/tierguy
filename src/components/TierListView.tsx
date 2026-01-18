@@ -7,8 +7,10 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  closestCenter,
   type DragEndEvent,
   type DragStartEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
@@ -85,28 +87,59 @@ export function TierListView() {
       const { active, over } = event
       setActiveItem(null)
 
-      if (!over) return
+      if (!over || !tierList) return
 
       const itemId = active.id as string
       const overId = over.id as string
 
-      // Determine target tier
+      // Don't do anything if dropped on itself
+      if (itemId === overId) return
+
+      // Determine if we're dropping over an item or a container
+      const overData = over.data.current as
+        | { containerId?: string; item?: { id: string }; tierId?: string }
+        | undefined
+
       let targetTierId: string | null = null
-      if (overId === 'unranked') {
+      let targetIndex: number
+
+      if (overData?.containerId) {
+        // Dropping over an item - insert at that position
+        const containerId = overData.containerId
+
+        if (containerId === 'unranked') {
+          targetTierId = null
+          const items = tierList.unrankedItems
+          targetIndex = items.findIndex((i) => i.id === overId)
+          if (targetIndex === -1) targetIndex = items.length
+        } else if (containerId.startsWith('tier-')) {
+          targetTierId = containerId.replace('tier-', '')
+          const tier = tierList.tiers.find((t) => t.id === targetTierId)
+          if (!tier) return
+          targetIndex = tier.items.findIndex((i) => i.id === overId)
+          if (targetIndex === -1) targetIndex = tier.items.length
+        } else {
+          return
+        }
+      } else if (overId === 'unranked' || overData?.tierId === null) {
+        // Dropping on unranked container
         targetTierId = null
+        targetIndex = tierList.unrankedItems.length
       } else if (overId.startsWith('tier-')) {
+        // Dropping on tier container
         targetTierId = overId.replace('tier-', '')
+        const tier = tierList.tiers.find((t) => t.id === targetTierId)
+        targetIndex = tier?.items.length || 0
+      } else if (overData?.tierId) {
+        // Dropping on tier container via data
+        targetTierId = overData.tierId
+        const tier = tierList.tiers.find((t) => t.id === targetTierId)
+        targetIndex = tier?.items.length || 0
       } else {
         return
       }
 
-      // Move to end of target
-      const targetItems =
-        targetTierId === null
-          ? tierList?.unrankedItems || []
-          : tierList?.tiers.find((t) => t.id === targetTierId)?.items || []
-
-      moveItem(itemId, targetTierId, targetItems.length)
+      moveItem(itemId, targetTierId, targetIndex)
     },
     [tierList, moveItem]
   )
@@ -150,6 +183,7 @@ export function TierListView() {
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
