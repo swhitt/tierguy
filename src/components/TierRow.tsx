@@ -9,14 +9,22 @@ import { SortableItem } from './SortableItem'
 
 interface TierRowProps {
   tier: Tier
+  tierIndex: number
+  totalTiers: number
   onItemClick?: (item: Item) => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
   selectedItemId?: string
   isOverContainer?: boolean
 }
 
 export const TierRow = memo(function TierRow({
   tier,
+  tierIndex,
+  totalTiers,
   onItemClick,
+  onMoveUp,
+  onMoveDown,
   selectedItemId,
   isOverContainer,
 }: TierRowProps) {
@@ -43,12 +51,52 @@ export const TierRow = memo(function TierRow({
 
   return (
     <div className="flex items-stretch rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-md">
-      {/* Tier label */}
+      {/* Tier label with reorder controls */}
       <div
-        className="w-20 sm:w-24 flex items-center justify-center font-bold text-white shrink-0 transition-transform duration-200"
+        className="w-20 sm:w-24 flex flex-col items-center justify-center font-bold text-white shrink-0 transition-transform duration-200 group/tier"
         style={{ backgroundColor: tier.color }}
       >
-        {tier.name}
+        <button
+          onClick={onMoveUp}
+          disabled={tierIndex === 0}
+          className="p-0.5 opacity-0 group-hover/tier:opacity-100 disabled:opacity-0 hover:bg-white/20 rounded transition-opacity"
+          aria-label="Move tier up"
+        >
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 15l7-7 7 7"
+            />
+          </svg>
+        </button>
+        <span>{tier.name}</span>
+        <button
+          onClick={onMoveDown}
+          disabled={tierIndex === totalTiers - 1}
+          className="p-0.5 opacity-0 group-hover/tier:opacity-100 disabled:opacity-0 hover:bg-white/20 rounded transition-opacity"
+          aria-label="Move tier down"
+        >
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </button>
       </div>
       {/* Tier items drop zone */}
       <div

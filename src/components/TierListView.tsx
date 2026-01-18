@@ -25,8 +25,14 @@ interface EditingItem {
 }
 
 export function TierListView() {
-  const { tierList, createTierList, removeItem, updateItemLabel, moveItem } =
-    useTierListStore()
+  const {
+    tierList,
+    createTierList,
+    removeItem,
+    updateItemLabel,
+    moveItem,
+    reorderTiers,
+  } = useTierListStore()
   const setExportRef = useExportStore((s) => s.setExportRef)
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null)
   const [activeItem, setActiveItem] = useState<ItemType | null>(null)
@@ -192,11 +198,15 @@ export function TierListView() {
           ref={tierRowsRef}
           className="flex-1 p-2 sm:p-4 space-y-1.5 sm:space-y-2 overflow-auto bg-gray-100 dark:bg-gray-900"
         >
-          {tierList.tiers.map((tier) => (
+          {tierList.tiers.map((tier, index) => (
             <TierRow
               key={tier.id}
               tier={tier}
+              tierIndex={index}
+              totalTiers={tierList.tiers.length}
               onItemClick={handleTierItemClick}
+              onMoveUp={() => reorderTiers(index, index - 1)}
+              onMoveDown={() => reorderTiers(index, index + 1)}
               selectedItemId={editingItem?.item.id}
             />
           ))}
