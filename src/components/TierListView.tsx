@@ -7,9 +7,12 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  pointerWithin,
+  rectIntersection,
   closestCenter,
   type DragEndEvent,
   type DragStartEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import { useTierListStore } from '../stores/tierListStore'
 import { useExportStore } from '../stores/exportStore'
@@ -22,6 +25,23 @@ import type { Item as ItemType } from '../types'
 interface EditingItem {
   item: ItemType
   isInTier: boolean
+}
+
+// Custom collision detection: use pointerWithin for containers, closestCenter for items
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First check if pointer is within any droppable (works for empty containers)
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    // If we have items under pointer, use closestCenter among them
+    const closestCollisions = closestCenter(args)
+    if (closestCollisions.length > 0) {
+      return closestCollisions
+    }
+    // Otherwise return the container collision
+    return pointerCollisions
+  }
+  // Fallback to rectIntersection for edge cases
+  return rectIntersection(args)
 }
 
 export function TierListView() {
@@ -188,7 +208,7 @@ export function TierListView() {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={customCollisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
