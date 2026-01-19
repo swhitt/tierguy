@@ -6,8 +6,23 @@ export async function downloadAsPng(
   filename = 'tierlist.png'
 ): Promise<void> {
   const dataUrl = await toPng(element, {
-    backgroundColor: '#111827', // darker, more professional background
-    pixelRatio: 2, // higher quality
+    backgroundColor: '#111827',
+    pixelRatio: 2,
+    // Filter out elements that cause rendering issues
+    filter: (node: HTMLElement) => {
+      // Skip images with empty or invalid src (causes Event error)
+      if (node.tagName === 'IMG') {
+        const img = node as HTMLImageElement
+        if (
+          !img.src ||
+          img.src === '' ||
+          (img.complete && img.naturalWidth === 0)
+        ) {
+          return false
+        }
+      }
+      return true
+    },
   })
 
   const link = document.createElement('a')
