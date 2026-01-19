@@ -53,8 +53,8 @@ export const Item = memo(function Item({
         decoding="async"
       />
       {item.label && (
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-black/0 px-1 py-1 pt-3">
-          <span className="text-white text-xs font-medium truncate block text-center drop-shadow-sm">
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent px-1 py-0.5 pt-4">
+          <span className="text-white text-[10px] leading-tight font-medium line-clamp-2 text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {item.label}
           </span>
         </div>
