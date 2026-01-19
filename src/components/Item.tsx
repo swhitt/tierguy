@@ -9,10 +9,11 @@ interface ItemProps {
 }
 
 // Touch-first sizing: larger on mobile (touch), can be smaller on desktop (mouse)
+// Items are wider than tall (roughly 4:3) to give labels more horizontal room
 const sizeClasses = {
-  sm: 'w-12 h-12 sm:w-10 sm:h-10',
-  md: 'w-16 h-16 sm:w-14 sm:h-14',
-  lg: 'w-20 h-20 sm:w-16 sm:h-16',
+  sm: 'w-14 h-12 sm:w-12 sm:h-10',
+  md: 'w-20 h-16 sm:w-16 sm:h-14',
+  lg: 'w-24 h-20 sm:w-20 sm:h-16',
 }
 
 export const Item = memo(function Item({
@@ -53,7 +54,10 @@ export const Item = memo(function Item({
         decoding="async"
       />
       {item.label && (
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent px-1 py-0.5 pt-4">
+        <div
+          className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent px-1 py-0.5 pt-4"
+          title={item.label}
+        >
           <span className="text-white text-[10px] leading-tight font-medium line-clamp-2 text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
             {item.label}
           </span>
