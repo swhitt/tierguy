@@ -27,6 +27,38 @@ interface EditingItem {
   isInTier: boolean
 }
 
+type ContainerTarget =
+  | { type: 'tier'; tierId: string }
+  | { type: 'unranked' }
+  | null
+
+// Parse container info from dnd-kit over data
+function parseContainerTarget(
+  overId: string,
+  overData?: { containerId?: string; tierId?: string | null }
+): ContainerTarget {
+  // Item in a container
+  if (overData?.containerId) {
+    if (overData.containerId === 'unranked') {
+      return { type: 'unranked' }
+    }
+    if (overData.containerId.startsWith('tier-')) {
+      return { type: 'tier', tierId: overData.containerId.slice(5) }
+    }
+  }
+  // Container itself
+  if (overId === 'unranked' || overData?.tierId === null) {
+    return { type: 'unranked' }
+  }
+  if (overId.startsWith('tier-')) {
+    return { type: 'tier', tierId: overId.slice(5) }
+  }
+  if (overData?.tierId) {
+    return { type: 'tier', tierId: overData.tierId }
+  }
+  return null
+}
+
 // Custom collision detection: use pointerWithin for containers, closestCenter for items
 const customCollisionDetection: CollisionDetection = (args) => {
   // First check if pointer is within any droppable (works for empty containers)
@@ -117,51 +149,41 @@ export function TierListView() {
       const itemId = active.id as string
       const overId = over.id as string
 
-      // Don't do anything if dropped on itself
       if (itemId === overId) return
 
-      // Determine if we're dropping over an item or a container
       const overData = over.data.current as
-        | { containerId?: string; item?: { id: string }; tierId?: string }
+        | { containerId?: string; tierId?: string | null }
         | undefined
 
-      let targetTierId: string | null = null
+      const target = parseContainerTarget(overId, overData)
+      if (!target) return
+
+      let targetTierId: string | null
       let targetIndex: number
 
+      // Dropping over an item - insert at that position
       if (overData?.containerId) {
-        // Dropping over an item - insert at that position
-        const containerId = overData.containerId
-
-        if (containerId === 'unranked') {
+        if (target.type === 'unranked') {
           targetTierId = null
-          const items = tierList.unrankedItems
-          targetIndex = items.findIndex((i) => i.id === overId)
-          if (targetIndex === -1) targetIndex = items.length
-        } else if (containerId.startsWith('tier-')) {
-          targetTierId = containerId.replace('tier-', '')
+          targetIndex = tierList.unrankedItems.findIndex((i) => i.id === overId)
+          if (targetIndex === -1) targetIndex = tierList.unrankedItems.length
+        } else {
+          targetTierId = target.tierId
           const tier = tierList.tiers.find((t) => t.id === targetTierId)
           if (!tier) return
           targetIndex = tier.items.findIndex((i) => i.id === overId)
           if (targetIndex === -1) targetIndex = tier.items.length
-        } else {
-          return
         }
-      } else if (overId === 'unranked' || overData?.tierId === null) {
-        // Dropping on unranked container
-        targetTierId = null
-        targetIndex = tierList.unrankedItems.length
-      } else if (overId.startsWith('tier-')) {
-        // Dropping on tier container
-        targetTierId = overId.replace('tier-', '')
-        const tier = tierList.tiers.find((t) => t.id === targetTierId)
-        targetIndex = tier?.items.length || 0
-      } else if (overData?.tierId) {
-        // Dropping on tier container via data
-        targetTierId = overData.tierId
-        const tier = tierList.tiers.find((t) => t.id === targetTierId)
-        targetIndex = tier?.items.length || 0
       } else {
-        return
+        // Dropping on container itself - append to end
+        if (target.type === 'unranked') {
+          targetTierId = null
+          targetIndex = tierList.unrankedItems.length
+        } else {
+          targetTierId = target.tierId
+          const tier = tierList.tiers.find((t) => t.id === targetTierId)
+          targetIndex = tier?.items.length || 0
+        }
       }
 
       moveItem(itemId, targetTierId, targetIndex)

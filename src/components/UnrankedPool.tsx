@@ -28,36 +28,40 @@ interface UnrankedPoolProps {
   selectedItemId?: string
 }
 
+// Helper: get File from FileSystemFileEntry
+function fileFromEntry(entry: FileSystemFileEntry): Promise<File | null> {
+  return new Promise((resolve) => {
+    entry.file(resolve, () => resolve(null))
+  })
+}
+
+// Helper: read all entries from a directory (handles batched reads)
+function readDirectory(reader: FileSystemDirectoryReader): Promise<FileSystemEntry[]> {
+  return new Promise((resolve) => {
+    const all: FileSystemEntry[] = []
+    const read = () => {
+      reader.readEntries((results) => {
+        if (results.length === 0) resolve(all)
+        else {
+          all.push(...results)
+          read()
+        }
+      }, () => resolve(all))
+    }
+    read()
+  })
+}
+
 // Recursively get files from a directory entry (for folder drag support)
 async function getFilesFromEntry(entry: FileSystemEntry): Promise<File[]> {
   if (entry.isFile) {
-    return new Promise((resolve) => {
-      ;(entry as FileSystemFileEntry).file(
-        (file) => resolve([file]),
-        () => resolve([])
-      )
-    })
-  } else if (entry.isDirectory) {
-    const dirReader = (entry as FileSystemDirectoryEntry).createReader()
-    const entries = await new Promise<FileSystemEntry[]>((resolve) => {
-      const allEntries: FileSystemEntry[] = []
-      const readEntries = () => {
-        dirReader.readEntries(
-          (results) => {
-            if (results.length === 0) {
-              resolve(allEntries)
-            } else {
-              allEntries.push(...results)
-              readEntries()
-            }
-          },
-          () => resolve(allEntries)
-        )
-      }
-      readEntries()
-    })
-    const files = await Promise.all(entries.map(getFilesFromEntry))
-    return files.flat()
+    const file = await fileFromEntry(entry as FileSystemFileEntry)
+    return file ? [file] : []
+  }
+  if (entry.isDirectory) {
+    const entries = await readDirectory((entry as FileSystemDirectoryEntry).createReader())
+    const nested = await Promise.all(entries.map(getFilesFromEntry))
+    return nested.flat()
   }
   return []
 }

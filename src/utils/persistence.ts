@@ -4,6 +4,7 @@ const STORAGE_KEY = 'tierguy-saves'
 const DEBOUNCE_MS = 1000
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
+let pendingResolve: ((result: SaveResult) => void) | null = null
 
 export interface SaveResult {
   success: boolean
@@ -56,15 +57,19 @@ function setStorageData(data: StorageData): SaveResult {
 
 /**
  * Save tier list to storage with debouncing.
+ * Superseded saves resolve immediately with success (newer data will be saved).
  */
 export function debouncedSave(tierList: TierList | null): Promise<SaveResult> {
-  return new Promise((resolve) => {
-    if (saveTimeout) {
-      clearTimeout(saveTimeout)
-    }
+  if (saveTimeout) {
+    clearTimeout(saveTimeout)
+    pendingResolve?.({ success: true })
+  }
 
+  return new Promise((resolve) => {
+    pendingResolve = resolve
     saveTimeout = setTimeout(() => {
       saveTimeout = null
+      pendingResolve = null
       resolve(saveTierList(tierList))
     }, DEBOUNCE_MS)
   })
